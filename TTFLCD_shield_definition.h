@@ -23,21 +23,25 @@ POSSIBILITY OF SUCH DAMAGE.
 //
 // TFTLCD shield control lines definition
 // 
-#define nRD_PORT PORTC				// A0 pin
-#define nRD_MASK B00000001			// nRS - Read Strobe signal (active - L)
+#define nRD_PORT (*(volatile uint32_t*)GPIO_ENABLE_REG)				// 26 pin
+#define nRD_MASK 0x04000000			// nRS - Read Strobe signal (active - L)
 
-#define nWR_PORT PORTC				// A1 pin
-#define nWR_MASK B00000010			// nWR - Write Strobe signal (active - L)
+#define nWR_PORT (*(volatile uint32_t*)GPIO_ENABLE_REG)				// 27 pin
+#define nWR_MASK 0x08000000			// nWR - Write Strobe signal (active - L)
 
-#define RS_PORT PORTC				// A2 pin
-#define RS_MASK B00000100			// RS - Register Select signal (index-status - L, control - H)
+#define RS_PORT (*(volatile uint32_t*)GPIO_ENABLE1_REG)				// 33 pin
+#define RS_MASK 0x00000002			// RS - Register Select signal (index-status - L, control - H)
 
-#define nCS_PORT PORTC				// A3 pin
-#define nCS_MASK B00001000			// nCS - Chip Select signal (active - L)
+#define nCS_PORT (*(volatile uint32_t*)GPIO_ENABLE_REG)				// 25 pin
+#define nCS_MASK 0x02000000			// nCS - Chip Select signal (active - L)
 
-#define nRESET_PORT PORTC			// A4 pin
-#define nRESET_MASK B00010000		// nRESET - Chip Reset signal (active - L)
+#define nRESET_PORT (*(volatile uint32_t*)GPIO_ENABLE1_REG)			// 32 pin
+#define nRESET_MASK 0x00000001		// nRESET - Chip Reset signal (active - L)
 
+#define nDATA_PORT (*(volatile uint32_t*)GPIO_OUT_REG)	//D0~D7 12~19 pin
+#define nDATA_MASK 0x000ff000		
+
+#define nDDRD GPIO_ENABLE_REG
 
 // Control signals are ACTIVE LOW (idle is HIGH)
 // Command/Data: LOW = command, HIGH = data
@@ -55,8 +59,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 // 
 #define LCD_WRITE_8_bit(d) {                          \
-    PORTD = (PORTD & B00000011) | ((d) & B11111100);  \
-    PORTB = (PORTB & B11111100) | ((d) & B00000011);  \
+    nDATA_PORT = (nDATA_PORT & ~nDATA_MASK) | ((uint32_t)d<<12) ;  \
 	LCD_WR_STROBE; }
 
 // Set value of TFT register: 8-bit address, 16-bit value
@@ -77,28 +80,40 @@ POSSIBILITY OF SUCH DAMAGE.
 #define LCD_READ_8_bit(result) {                      \
     RD_ACTIVE;                                        \
     DELAY7;                                           \
-    result = (PIND & B11111100) | (PINB & B00000011); \
+    result = (nDATA_PORT & nDATA_MASK)>>12; \
 	RD_IDLE; }
 
 // Data write strobe
 // Action: idle H -> change active L -> change idle H
 #define LCD_WR_STROBE { nWR_LOW; nWR_HIGH; }
 
-#define setWriteDirInline() { DDRD |=  B11111100; DDRB |=  B00000011; }
-#define setReadDirInline()  { DDRD &= ~B11111100; DDRB &= ~B00000011; }
+#define setWriteDirInline() { nDDRD |=  nDATA_MASK; }
+#define setReadDirInline()  { DDRD &= ~nDATA_MASK; }
 
 
 // NOTE: direct from https://github.com/samuraijap/TFTLCD-Library
 // Pixel read operations require a minimum 400 nS delay from RD_ACTIVE
-// to polling the input pins.  At 16 MHz, one machine cycle is 62.5 nS.
-// This code burns 7 cycles (437.5 nS) doing nothing; the RJMPs are
-// equivalent to two NOPs each, final NOP burns the 7th cycle, and the
+// to polling the input pins.  At 40 MHz, one machine cycle is 25 nS.
+// This code burns 16 cycles (400 nS) doing nothing; the RJMPs are
+// equivalent to two NOPs each, final NOP burns the 16th cycle, and the
 // last line is a radioactive mutant emoticon.
 #define DELAY7        \
   asm volatile(       \
-    "rjmp .+0" "\n\t" \
-    "rjmp .+0" "\n\t" \
-    "rjmp .+0" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
     "nop"      "\n"   \
 ::);
 
