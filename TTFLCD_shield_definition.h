@@ -93,12 +93,28 @@ POSSIBILITY OF SUCH DAMAGE.
 
 // NOTE: direct from https://github.com/samuraijap/TFTLCD-Library
 // Pixel read operations require a minimum 400 nS delay from RD_ACTIVE
-// to polling the input pins.  At 40 MHz, one machine cycle is 25 nS.
-// This code burns 16 cycles (400 nS) doing nothing; the RJMPs are
+// to polling the input pins.  At 80 MHz, one machine cycle is 12.5 nS.
+// This code burns 32 cycles (400 nS) doing nothing; the RJMPs are
 // equivalent to two NOPs each, final NOP burns the 16th cycle, and the
 // last line is a radioactive mutant emoticon.
 #define DELAY7        \
   asm volatile(       \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
+    "nop" "\n\t" \
     "nop" "\n\t" \
     "nop" "\n\t" \
     "nop" "\n\t" \
